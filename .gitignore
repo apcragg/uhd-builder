@@ -1,0 +1,22 @@
+# Build artifacts
+dist/
+build/
+*.egg-info/
+__pycache__/
+*.so
+
+# UHD Cache (Git clone of UHD)
+uhd-cache/
+uhd/
+install_prefix/
+staging/
+
+# Local development
+.venv/
+.idea/
+.vscode/
+*.swp
+*.log
+
+# Docker
+.docker_id

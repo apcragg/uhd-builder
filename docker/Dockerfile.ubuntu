@@ -1,0 +1,45 @@
+ARG BASE_IMAGE=ubuntu:22.04
+FROM ${BASE_IMAGE}
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
+
+# 1. Install core build dependencies (Static)
+RUN apt-get update && apt-get install -y \
+    build-essential cmake git libboost-all-dev libusb-1.0-0-dev libudev-dev \
+    curl ca-certificates python3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install modern patchelf (Ubuntu 20.04 is too old)
+RUN curl -sL https://github.com/NixOS/patchelf/releases/download/0.18.0/patchelf-0.18.0.tar.gz | tar -xz \
+    && cd patchelf-0.18.0 \
+    && ./configure && make && make install \
+    && cd .. && rm -rf patchelf-0.18.0
+
+# 2. Install uv (Static)
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+# 3. Workspace setup (Static)
+RUN mkdir -p /work && chmod 777 /work
+WORKDIR /work
+
+# 4. Python version setup (Changes based on --python)
+ARG PYTHON_VERSION=3.12
+ENV UV_PYTHON_INSTALL_DIR=/opt/uv/python
+RUN uv python install ${PYTHON_VERSION} && chmod -R a+rx /opt/uv/python
+
+# 5. Pre-cache dependencies
+ENV UV_CACHE_DIR=/var/cache/uv
+RUN mkdir -p /var/cache/uv && chmod 777 /var/cache/uv
+RUN uv run --python ${PYTHON_VERSION} \
+    --with mako --with requests --with "numpy<2" --with ruamel.yaml \
+    --with build --with setuptools --with auditwheel \
+    python3 --version && chmod -R 777 /var/cache/uv
+
+# Ensure uv-installed pythons are in the path for convenience
+# (uv run will find them anyway via UV_PYTHON_INSTALL_DIR)
+ENV PATH="/opt/uv/python/bin:${PATH}"
+ENV HOME=/work
+
+RUN useradd -m -u 1000 builder || true
+USER builder

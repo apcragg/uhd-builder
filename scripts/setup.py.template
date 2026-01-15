@@ -1,0 +1,26 @@
+from setuptools import setup, find_packages, Extension
+
+setup(
+    name="uhd",
+    version="{version}",
+    description="Universal Software Radio Peripheral (USRP) Hardware Driver Python API",
+    author="Ettus Research",
+    url="https://github.com/EttusResearch/uhd",
+    license="GPLv3",
+    packages={packages},
+    py_modules=["_uhd_cli"],
+    package_data={{
+        "uhd": ["*.so", "utils/*", "share/uhd/images/*", "share/uhd/images/inventory.json"],
+    }},
+    install_requires=[
+        "{numpy_spec}",
+        "requests",
+        "ruamel.yaml",
+    ],
+    ext_modules=[Extension("uhd._dummy", sources=[])],
+    entry_points={{
+        "console_scripts": {entry_points},
+    }},
+    include_package_data=True,
+    zip_safe=False,
+)
