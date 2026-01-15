@@ -56,6 +56,7 @@ def main():
     parser.add_argument("--skip-build", action="store_true", help="Skip docker build step")
     parser.add_argument("--clean", action="store_true", help="Clean build artifacts")
     parser.add_argument("--yes", "-y", action="store_true", help="Answer yes to all prompts")
+    parser.add_argument("--incremental", action="store_true", help="Incremental build (don't clean existing build dir)")
     args = parser.parse_args()
 
     if args.python:
@@ -101,6 +102,10 @@ def main():
             "."
         ] + docker_platform_args)
 
+    builder_args = ["/scripts/builder.py", "--tag", args.tag, "--numpy-spec", args.numpy]
+    if args.incremental:
+        builder_args.append("--incremental")
+
     run_command([
         "docker", "run", "--rm", "--user", args.user,
         "-e", f"NUMPY_SPEC={args.numpy}",
@@ -118,8 +123,7 @@ def main():
         "--with", "build",
         "--with", "setuptools",
         "--with", "auditwheel",
-        "/scripts/builder.py", "--tag", args.tag, "--numpy-spec", args.numpy
-    ])
+    ] + builder_args)
 
     print(f"\nSuccessfully built UHD {args.tag} wheels!")
     print(f"Check the '{dist_dir}' directory for the results.")
