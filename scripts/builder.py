@@ -233,18 +233,6 @@ class UHDWheelBuilder:
         utils_dest.mkdir(exist_ok=True)
         (utils_dest / "__init__.py").touch()
 
-        # Copy relocation helper
-        shutil.copy(self.scripts_dir / "relocation.py.template", utils_dest / "relocation.py")
-
-        # Patch uhd/__init__.py
-        init_py = uhd_dest / "__init__.py"
-        reloc_marker = "# --- UHD RELOCATABILITY PATCH ---"
-        reloc_code = "from .utils.relocation import patch_environ; patch_environ()"
-        if not init_py.exists():
-            init_py.write_text(f"{reloc_marker}\n{reloc_code}")
-        else:
-            self.patch_file(init_py, reloc_code, reloc_marker)
-
         # Copy utilities
         for py_util in self.install_dir.glob("**/uhd/utils/*.py"):
             shutil.copy(py_util, utils_dest / py_util.name)
@@ -299,14 +287,6 @@ class UHDWheelBuilder:
              if usrpctl.exists():
                  self.found_utils.append("usrpctl")
 
-        # Create dummy _uhd_cli.py because setup.py entry points need it,
-        # even if we are moving binaries to scripts, the entry points might still be useful aliases?
-        # Actually, with .data/scripts, we don't need entry_points for binaries.
-        # But for python scripts like uhd_images_downloader, we might still want them.
-        
-        wrapper_template = (self.scripts_dir / "run_util.py.template").read_text()
-        (self.staging_dir / "_uhd_cli.py").write_text(wrapper_template)
-
         version = self.get_version()
 
         for license_file in [self.uhd_dir / "LICENSE", self.uhd_dir / "host" / "LICENSE", self.uhd_dir / "COPYING"]:
@@ -327,9 +307,10 @@ class UHDWheelBuilder:
              numpy_spec = f"numpy{numpy_spec}"
 
         # Entry points ONLY for python scripts now
-        python_utils = ["uhd_images_downloader"]
+        # We point directly to the module main function
+        # Note: uhd_images_downloader.py usually has a main()
         eps = [
-            f"{util} = _uhd_cli:main" for util in python_utils
+            "uhd_images_downloader = uhd.utils.uhd_images_downloader:main"
         ]
         
         entry_points_str = json.dumps(eps, indent=8)

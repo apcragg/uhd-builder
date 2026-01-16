@@ -8,7 +8,6 @@ setup(
     url="https://github.com/EttusResearch/uhd",
     license="GPLv3",
     packages={packages},
-    py_modules=["_uhd_cli"],
     package_data={{
         "uhd": ["*.so", "utils/*", "share/uhd/images/*", "share/uhd/images/inventory.json"],
     }},
