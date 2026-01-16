@@ -45,12 +45,12 @@ class UHDWheelBuilder:
 
         content = file_path.read_text()
         
-        # 1. Apply regex replacements if provided
+        # Apply regex replacements if provided
         if regex:
             for pattern, replacement in regex.items():
                 content = re.sub(pattern, replacement, content)
 
-        # 2. Inject patch code if marker not present
+        # Inject patch code if marker not present
         if marker and marker not in content:
             lines = content.splitlines()
             # Find insertion point: after __future__ or top-level docstring/comments
@@ -198,7 +198,7 @@ class UHDWheelBuilder:
                 # No, that's broken. Raise error.
                 raise RuntimeError(f"Could not find python package in {build_python_pkg}")
 
-            # 2. Copy compiled extension from build dir if not already there
+            # Copy compiled extension from build dir if not already there
             # (It might be in build/python/uhd/ or just build/python/)
             build_python = self.build_dir / "python"
             found_ext = list(build_python.glob("libpyuhd*.so"))
@@ -405,13 +405,13 @@ class UHDWheelBuilder:
         cmake_dest.parent.mkdir(parents=True, exist_ok=True)
         pkgconfig_dest.parent.mkdir(parents=True, exist_ok=True)
 
-        # 1. Headers
+        # Headers
         # Copy from install_prefix/usr/include/uhd -> .data/headers/uhd
         src_include = self.install_dir / "usr" / "include" / "uhd"
         if src_include.exists():
             shutil.copytree(src_include, headers_dest, dirs_exist_ok=True)
 
-        # 2. Binaries (Scripts)
+        # Binaries (Scripts)
         # Copy from install_prefix/usr/bin + examples -> .data/scripts
         # We use the list we found earlier or just glob
         for item in self.found_utils:
@@ -435,7 +435,7 @@ class UHDWheelBuilder:
                                  shutil.copy(dep, lib_dest / dep.name)
                                  self.run(["patchelf", "--set-rpath", "$ORIGIN", str(lib_dest / dep.name)])
 
-        # 3. Libraries
+        # Libraries
         # Copy libuhd.so -> .data/data/lib
         libuhd_src = list(self.install_dir.glob("**/libuhd.so*"))
         if libuhd_src:
@@ -471,7 +471,7 @@ class UHDWheelBuilder:
             # libuhd.so -> libuhd.so.4.x.x
             # We will rely on whatever glob found. 
             
-        # 4. CMake & PkgConfig
+        # CMake & PkgConfig
         # Robustly find UHDConfig.cmake
         cmake_files = list(self.install_dir.rglob("UHDConfig.cmake"))
         if cmake_files:
@@ -490,21 +490,21 @@ class UHDWheelBuilder:
         else:
             logger.warning("Could not find uhd.pc!")
 
-        # 5. Share (Images)
+        # Share (Images)
         # Copy install_prefix/usr/share/uhd -> .data/data/share/uhd
         src_share = list(self.install_dir.glob("**/share/uhd"))
         if src_share:
-            # 1. Install to system share (for libuhd)
+            # Install to system share (for libuhd)
             shutil.copytree(src_share[0], share_dest / "uhd", dirs_exist_ok=True)
             
-            # 2. Install to python package share (for python scripts/legacy compat)
+            # Install to python package share (for python scripts/legacy compat)
             # e.g. site-packages/uhd/share/uhd
             python_share_dest = unpack_dir / "uhd" / "share" / "uhd"
             if not python_share_dest.exists():
                 shutil.copytree(src_share[0], python_share_dest, dirs_exist_ok=True)
                 logger.info(f"Duplicated share dir to {python_share_dest}")
 
-        # 6. Patch Python Extension RPATH
+        # Patch Python Extension RPATH
         # find _uhd.so or libpyuhd.so in site-packages/uhd
         for ext in (unpack_dir / "uhd").glob("libpyuhd*.so"):
             # It needs to find libuhd.so in .venv/lib
@@ -515,10 +515,10 @@ class UHDWheelBuilder:
             # ../../../ = lib  <-- This is where libuhd.so is
             self.run(["patchelf", "--set-rpath", "$ORIGIN/../../..", str(ext)])
 
-        # 7. Update RECORD
+        # Update RECORD
         self.update_record(unpack_dir, dist_info_dir)
         
-        # 8. Repack
+        # Repack
         new_wheel_name = wheel_name.replace("linux_x86_64", plat_tag).replace("linux_aarch64", plat_tag)
         if "manylinux" not in new_wheel_name:
              # Force rename if it was linux_x86_64
