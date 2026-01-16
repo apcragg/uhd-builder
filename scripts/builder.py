@@ -252,14 +252,32 @@ class UHDWheelBuilder:
         # Patch uhd_images_downloader.py
         downloader = utils_dest / "uhd_images_downloader.py"
         if downloader.exists():
-            self.patch_file(
-                downloader,
-                patch_code="from uhd.utils.relocation import patch_environ; patch_environ()",
-                marker="# --- RELOCATABILITY PATCH ---",
-                regex={
-                    r'"(fpga|fw|windrv)_default"': r'"(fpga|fw|windrv|b2xx)_default"'
-                }
-            )
+            lines = downloader.read_text().splitlines()
+            new_lines = []
+            imported_sys = False
+            
+            for line in lines:
+                if line.strip().startswith("import sys"):
+                    imported_sys = True
+                
+                # Replace the install path line
+                if line.strip().startswith("_DEFAULT_INSTALL_PATH"):
+                    new_lines.append('_DEFAULT_INSTALL_PATH = os.path.join(sys.prefix, "share", "uhd", "images")')
+                else:
+                    new_lines.append(line)
+            
+            # Inject import sys if missing
+            if not imported_sys:
+                # Find a good place (after shebang/comments)
+                insert_idx = 0
+                for i, line in enumerate(new_lines):
+                    if line.strip() and not line.startswith("#") and not line.startswith('"""'):
+                        insert_idx = i
+                        break
+                new_lines.insert(insert_idx, "import sys")
+                
+            downloader.write_text("\n".join(new_lines))
+            logger.info("Patched uhd_images_downloader.py with sys.prefix path")
 
         self.found_utils = []
         for line in installed_files:
@@ -498,13 +516,26 @@ class UHDWheelBuilder:
         # Copy install_prefix/usr/share/uhd -> .data/data/share/uhd
         src_share = list(self.install_dir.glob("**/share/uhd"))
         if src_share:
+            # 1. Install to system share (for libuhd)
             shutil.copytree(src_share[0], share_dest / "uhd", dirs_exist_ok=True)
+            
+            # 2. Install to python package share (for python scripts/legacy compat)
+            # e.g. site-packages/uhd/share/uhd
+            python_share_dest = unpack_dir / "uhd" / "share" / "uhd"
+            if not python_share_dest.exists():
+                shutil.copytree(src_share[0], python_share_dest, dirs_exist_ok=True)
+                logger.info(f"Duplicated share dir to {python_share_dest}")
 
         # 6. Patch Python Extension RPATH
         # find _uhd.so or libpyuhd.so in site-packages/uhd
         for ext in (unpack_dir / "uhd").glob("libpyuhd*.so"):
-            # It needs to find libuhd.so in ../../../lib
-            self.run(["patchelf", "--set-rpath", "$ORIGIN/../../../lib", str(ext)])
+            # It needs to find libuhd.so in .venv/lib
+            # Layout: .venv/lib/pythonX.Y/site-packages/uhd/libpyuhd.so
+            # $ORIGIN = uhd
+            # ../ = site-packages
+            # ../../ = pythonX.Y
+            # ../../../ = lib  <-- This is where libuhd.so is
+            self.run(["patchelf", "--set-rpath", "$ORIGIN/../../..", str(ext)])
 
         # 7. Update RECORD
         self.update_record(unpack_dir, dist_info_dir)

@@ -21,11 +21,6 @@ def main():
     pkg_root = os.path.join(script_dir, "uhd")
     utils_dir = os.path.join(pkg_root, "utils")
     
-    # Set UHD_IMAGES_DIR if it exists within the package
-    images_dir = os.path.join(pkg_root, "share", "uhd", "images")
-    if "UHD_IMAGES_DIR" not in os.environ and os.path.exists(images_dir):
-        os.environ["UHD_IMAGES_DIR"] = images_dir
-
     # Try running as Python script first
     py_util = os.path.join(utils_dir, f"{util_name}.py")
     if os.path.exists(py_util):
