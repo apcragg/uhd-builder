@@ -119,7 +119,6 @@ class UHDWheelBuilder:
             py_lib = os.path.join(py_libdir, py_ldlibrary)
 
         logger.info(f"Python Include: {py_inc}")
-        logger.info(f"Python Library: {py_lib}")
         
         cmake_cmd = [
             "cmake", "..",
@@ -221,8 +220,6 @@ class UHDWheelBuilder:
                      shutil.copy(found_ext[0], uhd_dest / found_ext[0].name)
                  else:
                      logger.error("Failed to locate libpyuhd.so!")
-
-        # Explicitly copy libpyuhd if found elsewhere (legacy check removed, merged above)
 
         images_dir = uhd_dest / "share" / "uhd" / "images"
         images_dir.mkdir(parents=True, exist_ok=True)
