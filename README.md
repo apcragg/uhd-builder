@@ -1,6 +1,6 @@
 # UHD Python Wheel Builder
 
-This project provides a robust, Docker-based build system for creating relocatable Python wheels for the USRP Hardware Driver (UHD). 
+This project provides a robust, Docker-based build system for creating relocatable Python wheels for the USRP Hardware Driver (UHD). Build wheels that can be installed into a Virtual Environment and Just Work. No need to mess with environment variables or carefully manage system library conflicts. 
 
 ## Features
 
@@ -8,7 +8,6 @@ This project provides a robust, Docker-based build system for creating relocatab
 *   **Multi-Python Support**: Target specific Python versions using `uv`.
 *   **Relocatable**: Bundles UHD binary utilities and C++ shared libraries into the wheel.
 *   **Automatic Image Discovery**: Utilities automatically find bundled FPGA images and firmware.
-*   **Optimized Build Cache**: Docker layers are optimized for fast subsequent builds.
 
 ## Prerequisites
 
@@ -39,16 +38,16 @@ Resulting wheels are placed in the `dist/` directory.
 *   `--clean`: Remove build artifacts and cache.\
 *   `--tag`: UHD version tag (`v4.9.0.1`)
 
-## Why the "relocatability patches"?
+## Packing
 
 Official UHD wheels on PyPI are essentially just the Python libraries;. They require that you've already installed the UHD system libraries on your machine.
 
 This builder creates **"Fat Wheels"** that are totally self-contained.
 
 1.  **Library paths**: We use `auditwheel` to vendor every `.so` file into the wheel and rewrite `RPATH` so they find each other.
-2.  **Resource paths (The "Hack")**: UHD expects FPGA images in `/usr/share/uhd`. When you're in a virtualenv, they aren't there. We inject a small `relocation.py` script that triggers on `import uhd`. It figures out where the package was installed and sets `UHD_IMAGES_DIR` automatically.
+2.  **Sahred resource paths: UHD expects FPGA images in `/usr/share/uhd`. When you're in a virtualenv, they aren't there. We inject a small `relocation.py` script that triggers on `import uhd`. It figures out where the package was installed and sets `UHD_IMAGES_DIR` automatically.
 
-The result is that you can just `pip install` and everything, including the binary utilities and FPGA loading, just works.
+The result is that you can just `pip install` and everything, including the binary utilities and FPGA image loading, just works.
 
 ## Verification
 
