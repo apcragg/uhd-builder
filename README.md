@@ -1,6 +1,6 @@
 # UHD Python Wheel Builder
 
-This project provides a robust, Docker-based build system for creating relocatable Python wheels for the Universal Software Radio Peripheral (USRP) Hardware Driver (UHD).
+This project provides a robust, Docker-based build system for creating relocatable Python wheels for the USRP Hardware Driver (UHD). 
 
 ## Features
 
@@ -14,13 +14,13 @@ This project provides a robust, Docker-based build system for creating relocatab
 
 *   Docker
 *   Python 3.8+ (on host)
-*   `uv` (recommended for local verification)
+*   `uv` or `pip` for verification
 
 ## Usage
 
 ### Building a Wheel
 
-Run the `build.py` script to build a wheel for a specific Ubuntu and Python target:
+Run the `build.py` script to build a wheel for a specific Ubuntu, Python, Numpy, and UHD target:
 
 ```bash
 # Build for Ubuntu 24.04 (Python 3.12)
@@ -36,28 +36,31 @@ Resulting wheels are placed in the `dist/` directory.
 
 *   `--arch`: Specify target architecture (`x86_64` or `arm64`).
 *   `--numpy`: Specify NumPy version constraint (default: `numpy<2`).
-*   `--clean`: Remove build artifacts and cache.
+*   `--clean`: Remove build artifacts and cache.\
+*   `--tag`: UHD version tag (`v4.9.0.1`)
 
 ## Why the "relocatability patches"?
 
-Official UHD wheels on PyPI are essentially just Python shims; they won't work unless you've already installed the UHD drivers globally on your OS. That's a pain if you want a portable environment.
+Official UHD wheels on PyPI are essentially just the Python libraries;. They require that you've already installed the UHD system libraries on your machine.
 
-This builder creates **"Fat Wheels"** that are totally self-contained. To make that happen, we have to deal with two things that C++ libraries usually hate:
+This builder creates **"Fat Wheels"** that are totally self-contained.
 
 1.  **Library paths**: We use `auditwheel` to vendor every `.so` file into the wheel and rewrite `RPATH` so they find each other.
 2.  **Resource paths (The "Hack")**: UHD expects FPGA images in `/usr/share/uhd`. When you're in a virtualenv, they aren't there. We inject a small `relocation.py` script that triggers on `import uhd`. It figures out where the package was installed and sets `UHD_IMAGES_DIR` automatically.
 
-The result is that you can just `pip install` and everything—including the binary utilities and FPGA loading—just works.
+The result is that you can just `pip install` and everything, including the binary utilities and FPGA loading, just works.
 
 ## Verification
 
-You can verify the built wheel using `uv`:
+Verify the built wheel using `uv`:
 
 ```bash
 uv venv test_env --python 3.12
 uv pip install --python test_env dist/uhd-*.whl
+uv run --python test_env uhd_images_downloader -t b2x
 uv run --python test_env uhd_find_devices
 ```
+Note that you should download images for the type of device you have. To download *all* images, omit the `-t` flag.
 
 ## License
 
