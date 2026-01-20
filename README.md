@@ -35,7 +35,7 @@ Resulting wheels are placed in the `dist/` directory.
 
 *   `--arch`: Specify target architecture (`x86_64` or `arm64`). *Note: There has been limited testing on `arm64`.*
 *   `--numpy`: Specify NumPy version constraint (default: `numpy<2`).
-*   `--clean`: Remove build artifacts and cache.\
+*   `--clean`: Remove build artifacts and cache.
 *   `--tag`: UHD version tag (`v4.9.0.1`)
 
 ## Packing
@@ -45,7 +45,7 @@ Official UHD wheels on PyPI are essentially just the Python libraries;. They req
 This builder creates **"Fat Wheels"** that are totally self-contained.
 
 1.  **Library paths**: We use `auditwheel` to vendor every `.so` file into the wheel and rewrite `RPATH` so they find each other.
-2.  **Sahred resource paths: UHD expects FPGA images in `/usr/share/uhd`. When you're in a virtualenv, they aren't there. We inject a small `relocation.py` script that triggers on `import uhd`. It figures out where the package was installed and sets `UHD_IMAGES_DIR` automatically.
+2.  **Shared resource paths**: UHD expects FPGA images in `/usr/share/uhd`. When you're in a virtualenv, they aren't there. We inject a small `relocation.py` script that triggers on `import uhd`. It figures out where the package was installed and sets `UHD_IMAGES_DIR` automatically.
 
 The result is that you can just `pip install` and everything, including the binary utilities and FPGA image loading, just works.
 
