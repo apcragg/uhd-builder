@@ -33,7 +33,7 @@ Resulting wheels are placed in the `dist/` directory.
 
 ### Advanced Options
 
-*   `--arch`: Specify target architecture (`x86_64` or `arm64`).
+*   `--arch`: Specify target architecture (`x86_64` or `arm64`). *Note: There has been limited testing on `arm64`.*
 *   `--numpy`: Specify NumPy version constraint (default: `numpy<2`).
 *   `--clean`: Remove build artifacts and cache.\
 *   `--tag`: UHD version tag (`v4.9.0.1`)
